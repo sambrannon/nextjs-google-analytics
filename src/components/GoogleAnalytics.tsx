@@ -9,6 +9,14 @@ type GoogleAnalyticsProps = {
   debugMode?: boolean;
   defaultConsent?: "granted" | "denied";
   nonce?: string;
+
+  // https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/gtag.js/index.d.ts#L4C45-L4C58
+  additionalConfig?:
+    | Gtag.ControlParams
+    | Gtag.EventParams
+    | Gtag.ConfigParams
+    | Omit<Gtag.ConfigParams, "page_path">
+    | Gtag.CustomParams;
 };
 
 type WithPageView = GoogleAnalyticsProps & {
@@ -29,6 +37,7 @@ export function GoogleAnalytics({
   defaultConsent = "granted",
   trackPageViews,
   nonce,
+  additionalConfig,
 }: WithPageView | WithIgnoreHashChange): JSX.Element | null {
   const _gaMeasurementId =
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? gaMeasurementId;
@@ -46,6 +55,12 @@ export function GoogleAnalytics({
     return null;
   }
 
+  const config = {
+    page_path: window.location.pathname,
+    debug_mode: debugMode,
+    ...additionalConfig,
+  };
+
   return (
     <>
       <Script src={`${gtagUrl}?id=${_gaMeasurementId}`} strategy={strategy} />
@@ -61,10 +76,7 @@ export function GoogleAnalytics({
               'analytics_storage': 'denied'
             });` : ``
             }
-            gtag('config', '${_gaMeasurementId}', {
-              page_path: window.location.pathname,
-              ${debugMode ? `debug_mode: ${debugMode},` : ""}
-            });
+            gtag('config', '${_gaMeasurementId}', ${JSON.stringify(config)});
           `}
       </Script>
     </>
